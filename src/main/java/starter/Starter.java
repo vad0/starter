@@ -124,7 +124,12 @@ public class Starter {
 
     public static Config buildConfig(String[] configs, String envConfigString) {
         Arrays.sort(configs);
-        return buildConfigSorted(configs, envConfigString);
+        try {
+            return buildConfigSorted(configs, envConfigString);
+        } catch (Throwable t) {
+            t.printStackTrace();
+            throw new RuntimeException(t);
+        }
     }
 
     private static Config buildConfigSorted(String[] configs, String envConfigString) {
