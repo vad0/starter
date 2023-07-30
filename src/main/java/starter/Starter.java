@@ -10,6 +10,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 /**
  * What parts of config are used?
@@ -40,29 +41,53 @@ public class Starter {
 
     static String buildCommand(String[] configs) {
         Config config = buildConfig(configs, ENV_CONFIG);
-        var command = buildCommand(config);
+        List<String> commandParts = buildCommandParts(config);
+        createNecessaryFolders(commandParts, Starter::createFolder);
+        return joinCommandParts(commandParts);
+    }
+
+    private static String joinCommandParts(List<String> command) {
         var joiner = new StringJoiner(" ");
-        for (final var item : command) {
+        for (var item : command) {
             joiner.add(item);
         }
         return joiner.toString();
     }
 
     public static void addSystemProperties(List<String> args, Config config) {
-        for (var entry : config.getConfig(SYSTEM_PROPERTIES_KEY).entrySet()) {
-            var option = "-D" + keyValue(entry);
-            args.add(option);
+        var res = new ArrayList<String>();
+        for (var entry : getSystemProperties(config).entrySet()) {
+            var option = "-D" + entry.getKey() + "=" + entry.getValue();
+            res.add(option);
         }
+        // Sort for predictability
+        res.sort(Comparator.naturalOrder());
+        args.addAll(res);
+    }
+
+    public static Map<String, String> getSystemProperties(Config config) {
+        return config.getConfig(SYSTEM_PROPERTIES_KEY)
+            .entrySet()
+            .stream()
+            .collect(Collectors.toMap(
+                entry -> unquote(entry.getKey()),
+                e -> e.getValue().unwrapped().toString()));
     }
 
     private static String string(ConfigValue value) {
         return String.valueOf(value.unwrapped());
     }
 
-    public static void addJvmFlags(List<String> args, Config config) {
+    public static List<String> getAllFlags(Config config) {
+        List<String> res = new ArrayList<>();
+        res.addAll(getFlags(config));
+        res.addAll(getJigsawFlags(config));
+        return res;
+    }
+
+    public static List<String> getFlags(Config config) {
         var rawFlags = config.getStringList("flags");
-        var flags = prepareFlags(rawFlags);
-        args.addAll(flags);
+        return prepareFlags(rawFlags);
     }
 
     /**
@@ -91,12 +116,21 @@ public class Starter {
         return flags;
     }
 
-    private static void addJigsaw(List<String> args, Config config, final String addType) {
+    public static List<String> getJigsawFlags(Config config) {
+        List<String> res = new ArrayList<>();
+        res.addAll(getJigsawFlags(config, ADD_OPENS));
+        res.addAll(getJigsawFlags(config, ADD_EXPORTS));
+        return res;
+    }
+
+    private static List<String> getJigsawFlags(Config config, String addType) {
+        List<String> jigsawFlags = new ArrayList<>();
         var jigsaw = getSubConfig(config, addType);
         for (var entry : jigsaw.entrySet()) {
-            args.add(addType);
-            args.add(keyValue(entry));
+            jigsawFlags.add(addType);
+            jigsawFlags.add(keyValue(entry));
         }
+        return jigsawFlags;
     }
 
     private static String keyValue(Map.Entry<String, ConfigValue> entry) {
@@ -160,21 +194,15 @@ public class Starter {
         }
     }
 
-    public static List<String> buildCommand(Config config) {
-        List<String> args = new ArrayList<>();
-
-        addJvmFlags(args, config);
-        addJigsaw(args, config, ADD_OPENS);
-        addJigsaw(args, config, ADD_EXPORTS);
-
+    public static List<String> buildCommandParts(Config config) {
+        List<String> args = new ArrayList<>(getAllFlags(config));
         addSystemProperties(args, config);
-
-        createNecessaryFolders(args, Starter::createFolder);
-
-        String mainClass = config.getString("main");
-        args.add(mainClass);
-
+        args.add(getMainClass(config));
         return args;
+    }
+
+    public static String getMainClass(Config config) {
+        return config.getString("main");
     }
 
     private static void createFolder(Path f) {
