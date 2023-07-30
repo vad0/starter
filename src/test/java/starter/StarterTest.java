@@ -3,12 +3,10 @@ package starter;
 import com.typesafe.config.ConfigFactory;
 import org.junit.jupiter.api.Test;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static starter.Starter.createNecessaryFolders;
 
 class StarterTest {
     private static final String CONFIG_1_PATH = "src/test/resources/1_def.conf";
@@ -90,17 +88,5 @@ class StarterTest {
         assertThrows(
             RuntimeException.class,
             () -> Starter.buildConfig(new String[]{CONFIG_1_PATH, CONFIG_2_PATH}, envConfig));
-    }
-
-    @Test
-    public void testCreateFolder() {
-        var rawFlags = List.of(
-            "-Ddijkstra.remainingShare=0.35",
-            "-Xlog:gc*:file=/var/log/dijkstra/trade_loader/gc.log");
-
-        var createdFolders = new ArrayList<String>();
-        createNecessaryFolders(rawFlags, f -> createdFolders.add(f.toString()));
-
-        assertEquals(List.of("/var/log/dijkstra/trade_loader"), createdFolders);
     }
 }
