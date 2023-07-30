@@ -150,11 +150,11 @@ public class Starter {
 
     private static void checkQuotes(Config resolvedConfig) {
         var keysWithQuotes = resolvedConfig.getConfig(SYSTEM_PROPERTIES_KEY)
-                .entrySet()
-                .stream()
-                .map(Map.Entry::getKey)
-                .filter(k -> k.contains("\""))
-                .toList();
+            .entrySet()
+            .stream()
+            .map(Map.Entry::getKey)
+            .filter(k -> k.contains("\""))
+            .toList();
         if (!keysWithQuotes.isEmpty()) {
             throw new RuntimeException("Keys with quotes: " + keysWithQuotes);
         }
