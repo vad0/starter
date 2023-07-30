@@ -5,7 +5,11 @@ import com.typesafe.config.ConfigFactory;
 import com.typesafe.config.ConfigValue;
 
 import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.*;
+import java.util.function.Consumer;
 
 /**
  * What parts of config are used?
@@ -25,6 +29,7 @@ public class Starter {
     private static final String ENV_CONFIG = System.getProperty("envConfig");
     private static final String ADD_OPENS = "--add-opens";
     private static final String ADD_EXPORTS = "--add-exports";
+    private static final List<String> FLAGS_TO_CREATE_FOLDERS = List.of("-Xlog");
 
     /**
      * @param configs are applied in <strong>alphabetic</strong> order. Later overrides and extends earlier.
@@ -119,12 +124,7 @@ public class Starter {
 
     public static Config buildConfig(String[] configs, String envConfigString) {
         Arrays.sort(configs);
-        try {
-            return buildConfigSorted(configs, envConfigString);
-        } catch (Throwable t) {
-            t.printStackTrace();
-            throw new RuntimeException(t);
-        }
+        return buildConfigSorted(configs, envConfigString);
     }
 
     private static Config buildConfigSorted(String[] configs, String envConfigString) {
@@ -169,9 +169,35 @@ public class Starter {
 
         addSystemProperties(args, config);
 
+        createNecessaryFolders(args, Starter::createFolder);
+
         String mainClass = config.getString("main");
         args.add(mainClass);
 
         return args;
+    }
+
+    private static void createFolder(Path f) {
+        try {
+            Files.createDirectories(f);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static void createNecessaryFolders(List<String> args, Consumer<Path> folderCreator) {
+        for (var arg : args) {
+            for (var flagStart : FLAGS_TO_CREATE_FOLDERS) {
+                if (arg.startsWith(flagStart)) {
+                    var argElements = arg.split("=");
+                    // we split flag XXXX=YYY and process YYY as target file
+                    if (argElements.length != 2) {
+                        continue;
+                    }
+                    var targetFile = Path.of(argElements[1]).getParent();
+                    folderCreator.accept(targetFile);
+                }
+            }
+        }
     }
 }

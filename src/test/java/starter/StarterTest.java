@@ -3,10 +3,12 @@ package starter;
 import com.typesafe.config.ConfigFactory;
 import org.junit.jupiter.api.Test;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static starter.Starter.createNecessaryFolders;
 
 class StarterTest {
     private static final String CONFIG_1_PATH = "src/test/resources/1_def.conf";
@@ -23,7 +25,7 @@ class StarterTest {
         var expectedCommand = """
             -XX:+UseZGC \
             -XX:ConcGCThreads=1 \
-            -Xlog:gc*:file=/var/log/dijkstra/hide/gc.log \
+            -Xlog:gc*:file=/tmp/app/hide/gc.log \
             -XX:+DebugNonSafepoints \
             -XX:+UnlockExperimentalVMOptions \
             --add-opens java.base/jdk.internal.misc=ALL-UNNAMED \
@@ -31,9 +33,9 @@ class StarterTest {
             -Dlog4j2.AsyncLogger.WaitStrategy=SLEEP \
             -Dlog4j2.contextSelector=org.apache.logging.log4j.core.async.AsyncLoggerContextSelector \
             -Dlog4j2.AsyncLogger.SleepTimeNs=50000000 \
-            -Ddijkstra.batchingNs=1000000 \
-            -Ddijkstra.o2oBufferSizeMb=20 \
-            -Ddijkstra.rootLogPath=/var/log/dijkstra \
+            -Dapp.o2oBufferSizeMb=20 \
+            -Dapp.batchingNs=1000000 \
+            -Dapp.rootLogPath=/tmp/app \
             main.Run""";
         assertEquals(expectedCommand, command);
     }
@@ -62,9 +64,9 @@ class StarterTest {
 
     @Test
     public void testPrepareFlags() {
-        var rawFlags = List.of("-ea", "-XX:+UseZGC", "-ea", "-XX:+UseSerialGC", "-Ddijkstra.remainingShare=0.35");
+        var rawFlags = List.of("-ea", "-XX:+UseZGC", "-ea", "-XX:+UseSerialGC", "-Dapp.remainingShare=0.35");
         var flags = Starter.prepareFlags(rawFlags);
-        var expected = List.of("-ea", "-XX:+UseSerialGC", "-Ddijkstra.remainingShare=0.35");
+        var expected = List.of("-ea", "-XX:+UseSerialGC", "-Dapp.remainingShare=0.35");
         assertEquals(expected, flags);
     }
 
@@ -73,9 +75,9 @@ class StarterTest {
         var envConfig = """
             {"flags": ${flags}["-da"], \
             "system_properties": {\
-            dijkstra.batchingNs: "12778736"}}""";
+            app.batchingNs: "12778736"}}""";
         var config = Starter.buildConfig(new String[]{CONFIG_1_PATH, CONFIG_2_PATH}, envConfig);
-        int batchingNs = config.getConfig("system_properties").getInt("dijkstra.batchingNs");
+        int batchingNs = config.getConfig("system_properties").getInt("app.batchingNs");
         assertEquals(12778736, batchingNs);
     }
 
@@ -84,9 +86,21 @@ class StarterTest {
         var envConfig = """
             {"flags": ${flags}["-da"], \
             "system_properties": {\
-            "dijkstra.batchingNs": "12778736"}}""";
+            "app.batchingNs": "12778736"}}""";
         assertThrows(
             RuntimeException.class,
             () -> Starter.buildConfig(new String[]{CONFIG_1_PATH, CONFIG_2_PATH}, envConfig));
+    }
+
+    @Test
+    public void testCreateFolder() {
+        var rawFlags = List.of(
+            "-Dapp.remainingShare=0.35",
+            "-Xlog:gc*:file=/tmp/trade_loader/gc.log");
+
+        var createdFolders = new ArrayList<String>();
+        createNecessaryFolders(rawFlags, f -> createdFolders.add(f.toString()));
+
+        assertEquals(List.of("/tmp/trade_loader"), createdFolders);
     }
 }
