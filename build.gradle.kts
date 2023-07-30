@@ -22,6 +22,18 @@ tasks.test {
     useJUnitPlatform()
 }
 
+tasks.withType<JavaCompile> {
+    options.run {
+        isFork = true
+        compilerArgs.addAll(
+                arrayOf(
+                        "--add-exports", "java.base/sun.nio.ch=ALL-UNNAMED",
+                        "--add-exports", "java.base/jdk.internal.misc=ALL-UNNAMED"
+                )
+        )
+    }
+}
+
 tasks.register("checkstyleAll") {
     group = "verification"
     dependsOn(tasks.withType<Checkstyle>())
@@ -31,5 +43,18 @@ tasks.withType<Checkstyle>().forEach { t ->
     t.reports.apply {
         xml.required.set(false)
         html.required.set(false)
+    }
+}
+
+java {
+    val javaVersion = JavaVersion.VERSION_17
+    sourceCompatibility = javaVersion
+    targetCompatibility = javaVersion
+}
+
+tasks.withType<Test> {
+    useJUnitPlatform()
+    testLogging {
+        events("PASSED", "SKIPPED", "FAILED")
     }
 }
