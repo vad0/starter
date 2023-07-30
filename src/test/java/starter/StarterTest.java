@@ -30,12 +30,12 @@ class StarterTest {
             -XX:+UnlockExperimentalVMOptions \
             --add-opens java.base/jdk.internal.misc=ALL-UNNAMED \
             -Dagrona.disable.bounds.checks=false \
+            -Dapp.batchingNs=1000000 \
+            -Dapp.o2oBufferSizeMb=20 \
+            -Dapp.rootLogPath=/tmp/app \
+            -Dlog4j2.AsyncLogger.SleepTimeNs=50000000 \
             -Dlog4j2.AsyncLogger.WaitStrategy=SLEEP \
             -Dlog4j2.contextSelector=org.apache.logging.log4j.core.async.AsyncLoggerContextSelector \
-            -Dlog4j2.AsyncLogger.SleepTimeNs=50000000 \
-            -Dapp.o2oBufferSizeMb=20 \
-            -Dapp.batchingNs=1000000 \
-            -Dapp.rootLogPath=/tmp/app \
             main.Run""";
         assertEquals(expectedCommand, command);
     }
