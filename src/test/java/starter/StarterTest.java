@@ -11,8 +11,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static starter.Starter.createNecessaryFolders;
 
 class StarterTest {
-    private static final String CONFIG_1_PATH = "src/test/resources/1_def.conf";
-    private static final String CONFIG_2_PATH = "src/test/resources/2_serv.conf";
+    private static final String CONFIG_1_PATH = "src/test/resources/bcd/1_def.conf";
+    private static final String CONFIG_2_PATH = "src/test/resources/abc/2_serv.conf";
 
     @Test
     public void loadBase() {

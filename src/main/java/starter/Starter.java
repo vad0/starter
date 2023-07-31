@@ -157,7 +157,7 @@ public class Starter {
     }
 
     public static Config buildConfig(String[] configs, String envConfigString) {
-        Arrays.sort(configs);
+        Arrays.sort(configs, Comparator.comparing(s -> Path.of(s).getFileName()));
         return buildConfigSorted(configs, envConfigString);
     }
 
