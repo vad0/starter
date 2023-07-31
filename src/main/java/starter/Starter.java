@@ -46,6 +46,11 @@ public class Starter {
         return joinCommandParts(commandParts);
     }
 
+    public static void createDirs(Config config) {
+        List<String> commandParts = buildCommandParts(config);
+        createNecessaryFolders(commandParts, Starter::createFolder);
+    }
+
     private static String joinCommandParts(List<String> command) {
         var joiner = new StringJoiner(" ");
         for (var item : command) {
