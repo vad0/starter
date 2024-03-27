@@ -17,7 +17,7 @@ repositories {
 }
 
 dependencies {
-    implementation("com.typesafe:config:1.4.2")
+    implementation("com.typesafe:config:1.4.3")
     testImplementation("org.junit.jupiter:junit-jupiter:5.10.1")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
